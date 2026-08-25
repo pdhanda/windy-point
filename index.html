@@ -262,25 +262,115 @@
 
   .media-grid.wide .placeholder:first-child { aspect-ratio: auto; }
 
-  /* Photo gallery */
-  .photo-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
-  }
-  .photo-tile {
-    aspect-ratio: 4/3;
+  /* Photo gallery cover */
+  .photo-cover {
+    position: relative;
+    aspect-ratio: 21/9;
     overflow: hidden;
-    background: var(--parchment-dim);
+    cursor: pointer;
+    border-radius: 2px;
   }
-  .photo-tile img {
+  .photo-cover img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+    transition: transform 0.4s ease;
+  }
+  .photo-cover:hover img {
+    transform: scale(1.03);
+  }
+  .photo-cover-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgba(28,26,23,0.75) 0%, rgba(28,26,23,0.05) 45%, transparent 70%);
+    display: flex;
+    align-items: flex-end;
+    padding: 26px;
+  }
+  .photo-cover-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--parchment);
+    color: var(--soil);
+    padding: 12px 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-radius: 3px;
+    font-weight: 700;
+  }
+  .photo-cover-btn .arrow {
+    font-size: 1rem;
   }
   @media (max-width: 480px) {
-    .photo-grid { grid-template-columns: 1fr; }
+    .photo-cover { aspect-ratio: 4/3; }
+  }
+
+  /* Lightbox */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(20,18,15,0.95);
+    z-index: 999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox-img {
+    max-width: 88vw;
+    max-height: 82vh;
+    object-fit: contain;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .lightbox-close {
+    position: absolute;
+    top: 24px;
+    right: 28px;
+    background: none;
+    border: none;
+    color: var(--parchment);
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.8;
+  }
+  .lightbox-close:hover { opacity: 1; }
+  .lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(247,242,231,0.12);
+    border: 1px solid rgba(247,242,231,0.3);
+    color: var(--parchment);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    font-size: 1.6rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lightbox-nav:hover { background: rgba(247,242,231,0.22); }
+  .lightbox-nav.prev { left: 20px; }
+  .lightbox-nav.next { right: 20px; }
+  .lightbox-counter {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--parchment-dim);
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+  }
+  @media (max-width: 480px) {
+    .lightbox-nav { width: 40px; height: 40px; font-size: 1.3rem; }
+    .lightbox-nav.prev { left: 8px; }
+    .lightbox-nav.next { right: 8px; }
   }
 
   /* Boundary sketch */
@@ -296,6 +386,18 @@
     display: grid;
     grid-template-columns: 1.2fr 1fr;
     gap: 60px;
+  }
+  .detail-grid.single {
+    grid-template-columns: 1fr;
+    max-width: 640px;
+  }
+  .split-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+  }
+  @media (max-width: 760px) {
+    .split-row { grid-template-columns: 1fr; gap: 48px; }
   }
   .detail-list dt {
     font-size: 0.7rem;
@@ -459,11 +561,11 @@
     <div class="section-head">
       <h2>Photo Gallery</h2>
     </div>
-    <div class="photo-grid">
-      <div class="photo-tile"><img src="images/photo-01.jpg" alt="Property photo 1" loading="lazy"></div>
-      <div class="photo-tile"><img src="images/photo-02.jpg" alt="Property photo 2" loading="lazy"></div>
-      <div class="photo-tile"><img src="images/photo-03.jpg" alt="Property photo 3" loading="lazy"></div>
-      <div class="photo-tile"><img src="images/photo-04.jpg" alt="Property photo 4" loading="lazy"></div>
+    <div class="photo-cover" onclick="openGallery(0)">
+      <img src="images/photo-01.jpg" alt="Property photo gallery" loading="lazy">
+      <div class="photo-cover-overlay">
+        <div class="photo-cover-btn">View Photo Gallery <span class="arrow">&#8250;</span></div>
+      </div>
     </div>
   </div>
 </section>
@@ -491,60 +593,40 @@
 </section>
 
 
-<section id="claim">
+<section id="claim-access">
   <div class="wrap">
-    <div class="section-head">
-      <h2>Parcel &amp; Claim Details</h2>
-    </div>
-    <div class="detail-grid">
-      <div>
+    <div class="split-row">
+      <div id="access">
+        <div class="section-head">
+          <h2>Location &amp; Access</h2>
+        </div>
+        <ul class="access-list">
+          <li><span class="k">Nearest Town</span><span>Minturn, 6 miles</span></li>
+          <li><span class="k">Highway Access</span><span>I-70, 11 minutes</span></li>
+          <li><span class="k">Road Access</span><span>Dirt &amp; gravel</span></li>
+          <li><span class="k">Terrain</span><span>Mountainous, pine &amp; aspen forest, cliffs, meadow</span></li>
+        </ul>
+      </div>
+      <div id="claim">
+        <div class="section-head">
+          <h2>Parcel &amp; Claim Details</h2>
+        </div>
         <dl class="detail-list">
           <dt>Total Acreage</dt>
           <dd>30 acres</dd>
           <dt>Claim Type</dt>
           <dd>Lode</dd>
           <dt>Legal Description</dt>
-          <dd>MINE: POTVIN &ndash; 6127<br>MINE: PINE MARTIN &ndash; 2282<br>MINE: SILVER QUEEN &ndash; 6121<br>MINE: MUNCHER &ndash; 6121<br>MINE: FIRST CHANCE &ndash; 6121<br>MINE: PINE BLUFF &ndash; 2281<br>MINE: PINE FOREST &ndash; 2280</dd>
+          <dd>MINE: POTVIN &ndash; 6127<br>MINE: PINE MARTIN &ndash; 2282<br>MINE: SILVER QUEEN &ndash; 6121<br>MINE: MUNCHER &ndash; 6121<br>MINE: FIRST CHANCE &ndash; 6121<br>MINE: PINE BLUFF &ndash; 2281<br>MINE: PINE FOREST &ndash; 2280<br>MINE: BI-METALLIC</dd>
           <dt>County / State</dt>
           <dd>Eagle, Colorado</dd>
           <dt>Zoning</dt>
           <dd>Resource</dd>
           <dt>Utilities</dt>
-          <dd>Electric at road, well permit included, must drill well &amp; septic</dd>
+          <dd>Electricity on property.</dd>
         </dl>
       </div>
-      <div>
-        <div class="boundary">
-          <svg viewBox="0 0 300 260" fill="none" stroke="#2F5C4B" stroke-width="2">
-            <polygon points="40,60 190,30 270,110 230,220 90,230 30,150" stroke-dasharray="6 5" fill="rgba(74,123,157,0.08)"/>
-            <circle cx="40" cy="60" r="3.5" fill="#C1683F"/>
-            <circle cx="190" cy="30" r="3.5" fill="#C1683F"/>
-            <circle cx="270" cy="110" r="3.5" fill="#C1683F"/>
-            <circle cx="230" cy="220" r="3.5" fill="#C1683F"/>
-            <circle cx="90" cy="230" r="3.5" fill="#C1683F"/>
-            <circle cx="30" cy="150" r="3.5" fill="#C1683F"/>
-            <text x="150" y="135" font-family="Space Mono" font-size="11" fill="#3D4A47" text-anchor="middle" stroke="none">approx. boundary</text>
-          </svg>
-        </div>
-        <div class="note-box" style="margin-top: 20px;">
-          Diagram is a rough sketch, not a surveyed boundary. Replace with an actual plat map or survey graphic when available.
-        </div>
-      </div>
     </div>
-  </div>
-</section>
-
-<section id="access">
-  <div class="wrap">
-    <div class="section-head">
-      <h2>Location &amp; Access</h2>
-    </div>
-    <ul class="access-list">
-      <li><span class="k">Nearest Town</span><span>Minturn, 6 miles</span></li>
-      <li><span class="k">Highway Access</span><span>I-70, 11 minutes</span></li>
-      <li><span class="k">Road Access</span><span>Dirt &amp; gravel</span></li>
-      <li><span class="k">Terrain</span><span>Mountainous, pine &amp; aspen forest, cliffs, meadow</span></li>
-    </ul>
   </div>
 </section>
 
@@ -552,7 +634,7 @@
   <div class="wrap">
     <div class="contact-block">
       <h2>Interested in the parcel?</h2>
-      <p class="sub">Reach out for the full survey packet, claim documentation, or to arrange a site visit.</p>
+      <p class="sub">Reach out for survey, further details, or to arrange a tour.<br>Please do not visit the property without an appointment. Natural hazards exist.</p>
       <div class="contact-row">
         <div class="item">
           <div class="label">Contact Name</div>
@@ -573,10 +655,67 @@
       </div>
     </div>
     <div class="fine-print">
-      This page is for general informational purposes only and does not constitute a legal offer, title guarantee, or claim verification. Buyers should independently verify acreage, claim status, and boundaries through official county and BLM/state mining records.
+      This page is for general informational purposes only and does not constitute a legal offer, title guarantee, or claim verification. Buyers should independently verify acreage, claim status, and boundaries through official govt records.
     </div>
   </div>
 </footer>
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" onclick="closeGallery()" aria-label="Close">&times;</button>
+  <button class="lightbox-nav prev" onclick="navGallery(-1)" aria-label="Previous photo">&#8249;</button>
+  <img class="lightbox-img" id="lightboxImg" src="" alt="Property photo">
+  <button class="lightbox-nav next" onclick="navGallery(1)" aria-label="Next photo">&#8250;</button>
+  <div class="lightbox-counter" id="lightboxCounter"></div>
+</div>
+
+<script>
+  var galleryImages = [
+    'images/photo-01.jpg',
+    'images/photo-02.jpg',
+    'images/photo-03.jpg',
+    'images/photo-04.jpg',
+    'images/photo-05.jpg',
+    'images/photo-06.jpg',
+    'images/photo-07.jpg',
+    'images/photo-08.jpg',
+    'images/photo-09.jpg',
+    'images/photo-10.jpg'
+  ];
+  var currentIndex = 0;
+
+  function updateLightboxImage() {
+    document.getElementById('lightboxImg').src = galleryImages[currentIndex];
+    document.getElementById('lightboxCounter').textContent = (currentIndex + 1) + ' / ' + galleryImages.length;
+  }
+
+  function openGallery(index) {
+    currentIndex = index || 0;
+    updateLightboxImage();
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeGallery() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function navGallery(direction) {
+    currentIndex = (currentIndex + direction + galleryImages.length) % galleryImages.length;
+    updateLightboxImage();
+  }
+
+  document.getElementById('lightbox').addEventListener('click', function(e) {
+    if (e.target === this) closeGallery();
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (!document.getElementById('lightbox').classList.contains('open')) return;
+    if (e.key === 'ArrowRight') navGallery(1);
+    if (e.key === 'ArrowLeft') navGallery(-1);
+    if (e.key === 'Escape') closeGallery();
+  });
+</script>
 
 </body>
 </html>
